@@ -20,6 +20,8 @@
 <a href="https://github.com/Oqura-ai/diff-forge/graphs/contributors"><img src="https://img.shields.io/github/contributors/Oqura-ai/diff-forge?style=flat-square&color=yellow" alt="Contributors"></a>
 </p>
 
+https://github.com/user-attachments/assets/80d7cf64-6d21-4665-b51d-d15630136336
+
 ## What It Does
 
 Training a video diffusion model requires datasets where every clip satisfies strict frame-count and resolution rules. Getting there from raw footage is tedious: trim clips, normalize frames, resize to model-specific multiples, add captions, package everything correctly. DiffForge automates all of that in a browser-based editor backed by a local FastAPI service.
