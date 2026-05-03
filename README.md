@@ -115,12 +115,10 @@ uvicorn app.main:app --reload --port 8000
 
 Set `NEXT_PUBLIC_API_URL` in `frontend/.env.local` if the backend runs elsewhere (default: `http://localhost:8000`).
 
-### Docker (Backend)
+### Running via Docker
 
 ```bash
-cd backend
-docker build -t diffforge-backend .
-docker run -p 8000:8000 diffforge-backend
+docker-compose -f docker-compose.yaml up --build
 ```
 
 ## Stack
