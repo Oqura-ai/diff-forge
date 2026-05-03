@@ -11,6 +11,9 @@
 
 <p align="center">
 <a href="https://github.com/Oqura-ai/diff-forge/stargazers"><img src="https://img.shields.io/github/stars/Oqura-ai/diff-forge?style=flat-square" alt="GitHub Stars"></a>
+<a href="https://discord.gg/Q586EsTxjh">
+  <img src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord Server">
+</a>
 <a href="https://github.com/Oqura-ai/diff-forge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Oqura-ai/diff-forge?style=flat-square&color=purple" alt="License"></a>
 <a href="https://github.com/Oqura-ai/diff-forge/commits/main"><img src="https://img.shields.io/github/last-commit/Oqura-ai/diff-forge?style=flat-square&color=blue" alt="Last Commit"></a>
 <img src="https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square" alt="Python Version">
