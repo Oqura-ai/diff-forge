@@ -23,8 +23,23 @@ export interface ModelConfig {
   frames: FrameConstraint;
 }
 
+export type ResizeMode =
+  | 'scale'         // stretch/squish to exact target dimensions
+  | 'pad'           // fit inside, symmetrical border padding
+  | 'crop_h'        // fit to height, centre-crop width (left/right)
+  | 'crop_v'        // fit to width, centre-crop height (top/bottom)
+  | 'crop_uniform'; // cover (scale to fill), centre-crop all sides
+
+export const RESIZE_MODE_LABELS: Record<ResizeMode, string> = {
+  scale:        'Scale (stretch)',
+  pad:          'Pad (letterbox)',
+  crop_h:       'Crop sides',
+  crop_v:       'Crop top/bottom',
+  crop_uniform: 'Cover crop',
+};
+
 export interface TransformConfig {
-  resolution: { mode: 'auto' | 'manual'; width?: number; height?: number };
+  resolution: { mode: 'auto' | 'manual'; width?: number; height?: number; resizeMode?: ResizeMode };
   frames: { mode: 'auto' | 'strict'; target?: number };
   applyResolution: boolean;
   applyFrames: boolean;

@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CaptionProvider(str, Enum):
@@ -33,13 +33,29 @@ class GeminiConfig(BaseModel):
     ] = "gemini-2.5-flash"
 
 
+class CaptionMode(str, Enum):
+    first_frame = "first_frame"
+    all_frames  = "all_frames"
+
+
+class FrameSheetConfig(BaseModel):
+    """Controls how frames are extracted and composed into a grid sheet for vision models."""
+    mode:         CaptionMode   = CaptionMode.all_frames
+    frame_count:  int           = Field(default=8, ge=1, le=64)
+    grid_cols:    Optional[int] = Field(default=None, ge=1)  # auto = ceil(sqrt(frame_count))
+    grid_rows:    Optional[int] = Field(default=None, ge=1)  # auto = ceil(frame_count/grid_cols)
+    frame_width:  Optional[int] = Field(default=None, ge=16)
+    frame_height: Optional[int] = Field(default=None, ge=16)
+
+
 class CaptionRequestConfig(BaseModel):
     """JSON-encoded config sent alongside the media file upload."""
     provider:      CaptionProvider
     system_prompt: str = ""
-    azure_config:  Optional[AzureConfig]  = None
-    openai_config: Optional[OpenAIConfig] = None
-    gemini_config: Optional[GeminiConfig] = None
+    azure_config:  Optional[AzureConfig]      = None
+    openai_config: Optional[OpenAIConfig]     = None
+    gemini_config: Optional[GeminiConfig]     = None
+    frame_sheet:   Optional[FrameSheetConfig] = None
 
 
 class CaptionResponse(BaseModel):

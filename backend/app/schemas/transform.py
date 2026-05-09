@@ -4,19 +4,28 @@ from pydantic import BaseModel
 
 
 class ResolutionMode(str, Enum):
-    auto = "auto"
+    auto   = "auto"
     manual = "manual"
 
 
+class ResizeMode(str, Enum):
+    scale        = "scale"         # stretch/squish to exact target dimensions
+    pad          = "pad"           # fit inside, symmetrical border padding
+    crop_h       = "crop_h"       # fit to target height, centre-crop width
+    crop_v       = "crop_v"       # fit to target width, centre-crop height
+    crop_uniform = "crop_uniform" # cover (scale to fill), centre-crop all sides
+
+
 class FramesMode(str, Enum):
-    auto = "auto"
+    auto   = "auto"
     strict = "strict"
 
 
 class ResolutionConfig(BaseModel):
-    mode: ResolutionMode = ResolutionMode.auto
-    width: Optional[int] = None
-    height: Optional[int] = None
+    mode:        ResolutionMode = ResolutionMode.auto
+    width:       Optional[int]  = None
+    height:      Optional[int]  = None
+    resize_mode: ResizeMode     = ResizeMode.scale
 
 
 class FramesConfig(BaseModel):

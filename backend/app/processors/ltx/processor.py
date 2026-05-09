@@ -140,9 +140,10 @@ class LTXProcessor(VideoProcessor):
 
             # ── 6. Resolution normalisation ───────────────────────────────────
             if cfg.apply_resolution:
-                _log(f"{seg_label} STEP 6  Resolution normalisation  {orig_w}×{orig_h} → {target_w}×{target_h}…")
+                resize_mode = cfg.resolution.resize_mode.value
+                _log(f"{seg_label} STEP 6  Resolution normalisation  {orig_w}×{orig_h} → {target_w}×{target_h}  mode={resize_mode}…")
                 prog(seg_base + 15, f"{seg_label} Resolution normalisation…")
-                seg_frames = normalize_resolution(seg_frames, target_w, target_h)
+                seg_frames = normalize_resolution(seg_frames, target_w, target_h, resize_mode=resize_mode)
                 _log(f"{seg_label} RES NORM  done  frame_shape={seg_frames[0].shape}")
             else:
                 _log(f"{seg_label} STEP 6  Resolution normalisation skipped (apply_resolution=False)")

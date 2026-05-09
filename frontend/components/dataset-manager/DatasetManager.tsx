@@ -245,6 +245,22 @@ export function DatasetManager() {
     }));
   };
 
+  const handleUpdateCaptionFrameConfig = (
+    datasetId: string,
+    fileId: string,
+    cfg: import('@/lib/caption-client').FrameSheetConfig | null,
+  ) => {
+    commit(datasets.map(ds => {
+      if (ds.id !== datasetId) return ds;
+      return {
+        ...ds,
+        files: ds.files.map(f =>
+          f.id === fileId ? { ...f, captionFrameConfig: cfg } : f,
+        ),
+      };
+    }));
+  };
+
   // Batch update: applies all captions in ONE commit so undo works atomically
   // and avoids stale-closure issues when many async calls complete in sequence.
   const handleDeleteDataset = (datasetId: string) => {
@@ -338,6 +354,7 @@ export function DatasetManager() {
                 onDeleteFiles={(fileIds) => handleDeleteFiles(selectedDataset.id, fileIds)}
                 onUpdateCaption={(fileId, caption) => handleUpdateCaption(selectedDataset.id, fileId, caption)}
                 onUpdateCaptionBatch={(updates) => handleUpdateCaptionBatch(selectedDataset.id, updates)}
+                onUpdateCaptionFrameConfig={(fileId, cfg) => handleUpdateCaptionFrameConfig(selectedDataset.id, fileId, cfg)}
               />
             </>
           ) : (

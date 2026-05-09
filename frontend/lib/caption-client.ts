@@ -32,14 +32,35 @@ export interface ProviderConfig {
   gemini?: GeminiProviderConfig;
 }
 
+// ─── Frame sheet config types ─────────────────────────────────────────────────
+
+export type CaptionMode = 'first_frame' | 'all_frames';
+
+export interface FrameSheetConfig {
+  mode: CaptionMode;
+  frameCount: number;
+  gridCols: number;   // always set; cols * rows must be >= frameCount
+  gridRows: number;   // always set; auto-enforced by UI
+  frameWidth?: number;
+  frameHeight?: number;
+}
+
+export const DEFAULT_FRAME_SHEET: FrameSheetConfig = {
+  mode: 'all_frames',
+  frameCount: 8,
+  gridCols: 3,  // 3×3 = 9 cells, 1 white padding for 8 frames
+  gridRows: 3,
+};
+
 // ─── API call ─────────────────────────────────────────────────────────────────
 
 export async function generateCaption(
   file: File,
   providerConfig: ProviderConfig,
   systemPrompt: string,
+  frameSheetConfig?: FrameSheetConfig,
 ): Promise<string> {
-  const configPayload = {
+  const configPayload: Record<string, unknown> = {
     provider: providerConfig.provider,
     system_prompt: systemPrompt,
     ...(providerConfig.azure && {
@@ -63,6 +84,17 @@ export async function generateCaption(
       },
     }),
   };
+
+  if (frameSheetConfig) {
+    configPayload.frame_sheet = {
+      mode:         frameSheetConfig.mode,
+      frame_count:  frameSheetConfig.frameCount,
+      grid_cols:    frameSheetConfig.gridCols,
+      grid_rows:    frameSheetConfig.gridRows,
+      frame_width:  frameSheetConfig.frameWidth,
+      frame_height: frameSheetConfig.frameHeight,
+    };
+  }
 
   const form = new FormData();
   form.append('file', file);

@@ -50,6 +50,19 @@ Apply resolution and frame normalisation to your entire dataset in one click:
 
 A 5-sample preview shows before/after metadata before you commit. Transforms run through the local backend using ffmpeg.
 
+#### Resize Modes
+Choose how each frame is fitted to the target resolution:
+
+| Mode | Behaviour |
+|------|-----------|
+| Scale (stretch) | Stretch/squish directly to target dimensions — no aspect-ratio preservation |
+| Pad (letterbox) | Fit entirely within target, fill remainder with a symmetrical border sampled from the frame's edge pixels |
+| Crop sides | Fit to target height, centre-crop left and right equally |
+| Crop top/bottom | Fit to target width, centre-crop top and bottom equally |
+| Cover crop | Scale until both sides meet or exceed the target, then centre-crop all four sides (CSS `object-fit: cover`) |
+
+All resize operations use Lanczos resampling.
+
 ### Per-Item Editor
 Open any file in a full-screen workspace for fine-grained control:
 
@@ -68,7 +81,16 @@ Generate text descriptions for every clip using three provider options:
 | OpenAI | gpt-4o, gpt-4.1, gpt-4.1-mini |
 | Google Gemini | gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-flash |
 
-DiffForge builds a sprite sheet from up to 8 evenly-spaced frames and sends it to the vision model with a customisable system prompt. Preview 5 samples before running the full batch. Choose "empty only" or "override" mode.
+DiffForge sends frames to the vision model with a customisable system prompt. Preview 5 samples before running the full batch. Choose "empty only" or "override" mode.
+
+#### Frame Ingestion Control
+Fine-tune exactly what the vision model sees for each video or GIF:
+
+- **First frame** — extract only the opening frame; fast and low-token.
+- **All frames** — extract N evenly-spaced frames and compose them into a configurable grid sheet.
+  - **Frame count** — 1 to 64 frames.
+  - **Grid layout** — set columns and rows independently; the UI auto-enforces `cols × rows ≥ frame count`. Empty cells are padded white.
+  - **Frame dimensions** — optional explicit W × H per cell; leave blank to auto-size.
 
 ### Dataset Export
 Export your finished dataset as a ZIP ready to drop into a training script:

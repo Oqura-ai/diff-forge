@@ -14,6 +14,7 @@ interface FileMeta {
   splits?: number[];
   validation?: DatasetFile['validation'];
   originalFileName: string;
+  captionFrameConfig?: DatasetFile['captionFrameConfig'];
 }
 
 interface DatasetMeta {
@@ -100,6 +101,7 @@ export async function saveDatasets(datasets: Dataset[]): Promise<void> {
         splits: f.splits,
         validation: f.validation,
         originalFileName: f.file.name,
+        captionFrameConfig: f.captionFrameConfig,
       })),
     }));
 
@@ -131,6 +133,7 @@ export async function loadDatasets(): Promise<Dataset[]> {
           splits: fm.splits,
           validation: fm.validation,
           mediaUrl: URL.createObjectURL(file),
+          captionFrameConfig: fm.captionFrameConfig,
         });
       }
       if (files.length === 0 && dm.files.length > 0) continue;

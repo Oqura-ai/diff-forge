@@ -62,7 +62,7 @@ async def generate_caption(
     filename   = file.filename or "media.bin"
 
     try:
-        image_bytes, mime_type = prepare_for_captioning(file_bytes, filename)
+        image_bytes, mime_type = prepare_for_captioning(file_bytes, filename, cfg.frame_sheet)
     except Exception as exc:
         raise HTTPException(status_code=422, detail=f"Media preparation failed: {exc}")
 

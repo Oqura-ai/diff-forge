@@ -11,12 +11,12 @@ import { TransformPanel } from './TransformPanel';
 import { VideoGrid } from './VideoGrid';
 import { ItemDetailModal } from './ItemDetailModal';
 import { ItemEditWorkspace } from './ItemEditWorkspace';
-import { CaptionPanel, type CaptionConfig } from './CaptionPanel';
+import { CaptionPanel, FrameSheetEditor, type CaptionConfig } from './CaptionPanel';
 import type { Dataset, DatasetFile } from '@/lib/dataset';
 import type { TransformConfig, ModelConfig } from '@/lib/model-config';
 import { MODEL_CONFIGS } from '@/lib/model-config';
 import { processVideoWithBackend } from '@/lib/transform-utils';
-import { generateCaption, type ProviderConfig } from '@/lib/caption-client';
+import { generateCaption, type ProviderConfig, type FrameSheetConfig, DEFAULT_FRAME_SHEET } from '@/lib/caption-client';
 import { cn } from '@/lib/utils';
 
 interface BatchState {
@@ -37,6 +37,7 @@ interface DatasetViewProps {
   onDeleteFiles: (fileIds: Set<string>) => void;
   onUpdateCaption: (fileId: string, caption: string) => void;
   onUpdateCaptionBatch: (updates: { fileId: string; caption: string }[]) => void;
+  onUpdateCaptionFrameConfig: (fileId: string, cfg: FrameSheetConfig | null) => void;
 }
 
 const DEFAULT_TRANSFORM: TransformConfig = {
@@ -49,9 +50,10 @@ const DEFAULT_TRANSFORM: TransformConfig = {
 const DEFAULT_CAPTION_CONFIG: CaptionConfig = {
   systemPrompt: '',
   samplingMode: 'empty-only',
+  frameSheet: DEFAULT_FRAME_SHEET,
 };
 
-export function DatasetView({ dataset, validating, onApplyTransform, onSaveSplits, onApplyTransformToSelected, onReplaceWithSegments, onReplaceBatch, onDeleteFiles, onUpdateCaption, onUpdateCaptionBatch }: DatasetViewProps) {
+export function DatasetView({ dataset, validating, onApplyTransform, onSaveSplits, onApplyTransformToSelected, onReplaceWithSegments, onReplaceBatch, onDeleteFiles, onUpdateCaption, onUpdateCaptionBatch, onUpdateCaptionFrameConfig }: DatasetViewProps) {
   const [activeTab, setActiveTab] = useState('transform');
 
   // Transform tab state
@@ -148,10 +150,13 @@ export function DatasetView({ dataset, validating, onApplyTransform, onSaveSplit
 
   const captionedCount = dataset.files.filter((f) => f.caption !== null).length;
 
+  // Resolve the effective frame config for a file: per-item override takes priority.
+  const effectiveFrameConfig = (file: DatasetFile): FrameSheetConfig =>
+    file.captionFrameConfig ?? captionConfig.frameSheet;
+
   // ── caption generation ────────────────────────────────────────────────────
   // Collect ALL results first, then commit once — avoids the stale-closure
-  // bug where each onUpdateCaption call would overwrite the previous one
-  // because they all started from the same original datasets snapshot.
+  // bug where each onUpdateCaption call would overwrite the previous one.
   const runCaptionBatch = async (files: DatasetFile[]) => {
     if (!captionProviderConfig || files.length === 0) return;
     setCaptionGenerating(true);
@@ -163,7 +168,7 @@ export function DatasetView({ dataset, validating, onApplyTransform, onSaveSplit
       setCaptionBatchState(prev => prev ? { ...prev, current: file.name } : null);
       try {
         const caption = await generateCaption(
-          file.file, captionProviderConfig, captionConfig.systemPrompt,
+          file.file, captionProviderConfig, captionConfig.systemPrompt, effectiveFrameConfig(file),
         );
         results.push({ fileId: file.id, caption });
       } catch {
@@ -201,11 +206,12 @@ export function DatasetView({ dataset, validating, onApplyTransform, onSaveSplit
     if (!captionProviderConfig) return;
     const file = dataset.files.find(f => f.id === fileId);
     if (!file) return;
+    const frameCfg = file.captionFrameConfig ?? captionConfig.frameSheet;
     const caption = await generateCaption(
-      file.file, captionProviderConfig, captionConfig.systemPrompt,
+      file.file, captionProviderConfig, captionConfig.systemPrompt, frameCfg,
     );
-    onUpdateCaption(fileId, caption); // single call — no stale-closure risk
-  }, [captionProviderConfig, captionConfig.systemPrompt, dataset.files, onUpdateCaption]);
+    onUpdateCaption(fileId, caption);
+  }, [captionProviderConfig, captionConfig.systemPrompt, captionConfig.frameSheet, dataset.files, onUpdateCaption]);
 
   const handlePreviewSamples = async () => {
     if (!captionProviderConfig) return;
@@ -215,7 +221,7 @@ export function DatasetView({ dataset, validating, onApplyTransform, onSaveSplit
     for (const file of shuffled) {
       try {
         const caption = await generateCaption(
-          file.file, captionProviderConfig, captionConfig.systemPrompt,
+          file.file, captionProviderConfig, captionConfig.systemPrompt, effectiveFrameConfig(file),
         );
         items.push({ file, caption });
       } catch (e) {
@@ -327,8 +333,10 @@ export function DatasetView({ dataset, validating, onApplyTransform, onSaveSplit
               <CaptionDetail
                 file={captionFocusedFile}
                 providerConfig={captionProviderConfig}
+                globalFrameSheet={captionConfig.frameSheet}
                 onClose={() => setCaptionFocusedId(null)}
                 onGenerate={() => handleGenerateOne(captionFocusedFile.id)}
+                onUpdateFrameConfig={(cfg) => onUpdateCaptionFrameConfig(captionFocusedFile.id, cfg)}
               />
             )}
 
@@ -567,6 +575,11 @@ function CaptionCard({
             : <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm" />}
         </div>
 
+        {/* per-item frame override indicator */}
+        {file.captionFrameConfig != null && (
+          <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm" title="Frame override active" />
+        )}
+
         {selected && <div className="absolute inset-0 bg-primary/10 pointer-events-none" />}
       </div>
 
@@ -686,16 +699,22 @@ function CaptionPreviewModal({
 function CaptionDetail({
   file,
   providerConfig,
+  globalFrameSheet,
   onClose,
   onGenerate,
+  onUpdateFrameConfig,
 }: {
   file: DatasetFile;
-  providerConfig: import('@/lib/caption-client').ProviderConfig | null;
+  providerConfig: ProviderConfig | null;
+  globalFrameSheet: FrameSheetConfig;
   onClose: () => void;
   onGenerate: () => Promise<void>;
+  onUpdateFrameConfig: (cfg: FrameSheetConfig | null) => void;
 }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const hasOverride = file.captionFrameConfig != null;
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -760,33 +779,66 @@ function CaptionDetail({
         )}
       </div>
 
-      {/* caption display */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className="p-3 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-              Caption
-            </p>
-            {file.caption !== null ? (
-              <Badge variant="outline" className="text-[9px] h-3.5 px-1.5 border-emerald-500/60 text-emerald-400">
-                captioned
-              </Badge>
+        <div className="p-3 flex flex-col gap-3">
+          {/* caption display */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                Caption
+              </p>
+              {file.caption !== null ? (
+                <Badge variant="outline" className="text-[9px] h-3.5 px-1.5 border-emerald-500/60 text-emerald-400">
+                  captioned
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[9px] h-3.5 px-1.5 border-amber-500/60 text-amber-400">
+                  missing
+                </Badge>
+              )}
+            </div>
+
+            {file.caption ? (
+              <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap break-words">
+                {file.caption}
+              </p>
             ) : (
-              <Badge variant="outline" className="text-[9px] h-3.5 px-1.5 border-amber-500/60 text-amber-400">
-                missing
-              </Badge>
+              <div className="rounded-lg border border-dashed border-border p-3 text-center">
+                <p className="text-xs text-muted-foreground italic">No caption yet.</p>
+              </div>
             )}
           </div>
 
-          {file.caption ? (
-            <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap break-words">
-              {file.caption}
-            </p>
-          ) : (
-            <div className="rounded-lg border border-dashed border-border p-3 text-center">
-              <p className="text-xs text-muted-foreground italic">No caption yet.</p>
+          {/* per-item frame override */}
+          <div className="flex flex-col gap-2 pt-1 border-t">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                Frame override
+              </p>
+              <button
+                onClick={() => onUpdateFrameConfig(hasOverride ? null : { ...globalFrameSheet })}
+                className={cn(
+                  'text-[10px] px-1.5 py-0.5 rounded border transition-colors font-medium',
+                  hasOverride
+                    ? 'bg-blue-500/15 border-blue-500/50 text-blue-400'
+                    : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                )}
+              >
+                {hasOverride ? 'on' : 'off'}
+              </button>
             </div>
-          )}
+
+            {hasOverride ? (
+              <FrameSheetEditor
+                config={file.captionFrameConfig!}
+                onChange={onUpdateFrameConfig}
+              />
+            ) : (
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                Using global settings. Toggle on to override for this item.
+              </p>
+            )}
+          </div>
         </div>
       </ScrollArea>
     </div>

@@ -34,7 +34,12 @@ export async function processVideoWithBackend(opts: ProcessOptions): Promise<Dat
   progress(2, 'Uploading…');
 
   const job = await startTransformJob(file.file, model, {
-    resolution: config.resolution,
+    resolution: {
+      mode:        config.resolution.mode,
+      width:       config.resolution.width,
+      height:      config.resolution.height,
+      resize_mode: config.resolution.resizeMode,
+    },
     frames: config.frames,
     splits: splits && splits.length > 0 ? splits : undefined,
     frame_deletions: frameDeletions && frameDeletions.length > 0 ? frameDeletions : undefined,

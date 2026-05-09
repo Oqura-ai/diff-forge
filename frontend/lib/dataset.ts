@@ -1,3 +1,5 @@
+import type { FrameSheetConfig } from './caption-client';
+
 export type TargetModel = 'LTX' | 'WAN';
 export type MediaType = 'video' | 'image' | 'gif';
 
@@ -37,6 +39,7 @@ export interface DatasetFile {
   mediaUrl: string;
   validation?: ValidationResult;
   splits?: number[]; // split time-points in seconds (video only)
+  captionFrameConfig?: FrameSheetConfig | null; // per-item override; null/undefined = use global
 }
 
 export interface SanityIssue {

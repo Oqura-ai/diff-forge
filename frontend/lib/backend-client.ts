@@ -28,7 +28,7 @@ export interface TransformJob {
 }
 
 export interface TransformRequestPayload {
-  resolution: { mode: string; width?: number; height?: number };
+  resolution: { mode: string; width?: number; height?: number; resize_mode?: string };
   frames: { mode: string; target?: number };
   splits?: number[];
   frame_deletions?: number[];  // 0-based output frame indices to remove after normalisation

@@ -9,7 +9,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import type { SanityIssue } from '@/lib/dataset';
-import type { TransformConfig, ModelConfig } from '@/lib/model-config';
+import type { TransformConfig, ModelConfig, ResizeMode } from '@/lib/model-config';
+import { RESIZE_MODE_LABELS } from '@/lib/model-config';
 
 interface TransformPanelProps {
   sanityIssues: SanityIssue[];
@@ -162,6 +163,25 @@ export function TransformPanel({
                   value={resolution.mode}
                   onChange={(v) => setResMode(v as 'auto' | 'manual')}
                 />
+
+                {/* Resize mode — always visible when resolution is on */}
+                <div className="mt-1.5 flex flex-col gap-0.5">
+                  <Label className="text-[10px] text-muted-foreground">Resize mode</Label>
+                  <select
+                    className="h-6 w-full text-xs px-1.5 bg-background border border-input rounded-md outline-none focus:ring-1 focus:ring-ring transition-shadow text-foreground cursor-pointer"
+                    value={resolution.resizeMode ?? 'scale'}
+                    onChange={(e) =>
+                      onConfigChange({
+                        ...transformConfig,
+                        resolution: { ...resolution, resizeMode: e.target.value as ResizeMode },
+                      })
+                    }
+                  >
+                    {(Object.entries(RESIZE_MODE_LABELS) as [ResizeMode, string][]).map(([id, label]) => (
+                      <option key={id} value={id}>{label}</option>
+                    ))}
+                  </select>
+                </div>
 
                 {resolution.mode === 'auto' ? (
                   <p className="text-[11px] text-muted-foreground mt-1.5 leading-tight">
